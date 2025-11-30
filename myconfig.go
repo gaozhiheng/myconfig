@@ -23,7 +23,7 @@ var (
 	globalConfig   *Config
 	defaultKeyFile = "myconfigkey.json"
 	// 编译时注入的密钥文件密码，通过 -ldflags 注入
-	//go build -ldflags '-X github.com/yourpackage/myconfig.keyFilePassword=your_secret_password' -o your_app
+	//go build -ldflags '-X github.com/gaozhiheng/myconfig.keyFilePassword=Gao@2025' -o example example.go
 	keyFilePassword = ""
 )
 
@@ -38,6 +38,11 @@ func Init(configPath, keyFilePath string) error {
 		cfg.keyFilePath = defaultKeyFile
 	} else {
 		cfg.keyFilePath = keyFilePath
+	}
+
+	// 检查编译时是否注入了密钥文件密码
+	if keyFilePassword == "" {
+		return fmt.Errorf("key file password not set, please build with -ldflags '-X github.com/gaozhiheng/myconfig.keyFilePassword=your_password'")
 	}
 
 	// 检查密钥文件是否存在
@@ -67,12 +72,53 @@ func Init(configPath, keyFilePath string) error {
 		cfg.decryptPwd = decryptPwd
 	}
 
+	// 检查配置文件是否存在，如果不存在则创建空配置
+	if err := cfg.ensureConfigFile(); err != nil {
+		return fmt.Errorf("failed to ensure config file: %v", err)
+	}
+
 	// 加载配置数据
 	if err := cfg.loadConfig(); err != nil {
 		return err
 	}
 
 	globalConfig = cfg
+	return nil
+}
+
+// ensureConfigFile 确保配置文件存在，如果不存在则创建空JSON对象
+func (c *Config) ensureConfigFile() error {
+	_, err := os.Stat(c.configPath)
+	if os.IsNotExist(err) {
+		fmt.Printf("配置文件 %s 不存在，创建空配置文件...\n", c.configPath)
+
+		// 创建空JSON对象
+		emptyConfig := make(map[string]interface{})
+		configJSON, err := json.MarshalIndent(emptyConfig, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal empty config: %v", err)
+		}
+
+		// 创建并加密配置文件
+		file, err := os.Create(c.configPath)
+		if err != nil {
+			return fmt.Errorf("failed to create config file: %v", err)
+		}
+		defer file.Close()
+
+		// 使用解密密码加密空配置
+		err = vimcrypto.Encrypt(file, c.decryptPwd, configJSON)
+		if err != nil {
+			return fmt.Errorf("failed to encrypt config file: %v", err)
+		}
+
+		fmt.Printf("空配置文件 %s 创建成功\n", c.configPath)
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("failed to check config file: %v", err)
+	}
+
+	// 配置文件已存在，无需操作
 	return nil
 }
 
