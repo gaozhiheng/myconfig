@@ -1,4 +1,4 @@
-module myconfig
+module github.com/gaozhiheng/myconfig
 
 go 1.24.0
 
