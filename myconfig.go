@@ -23,7 +23,7 @@ var (
 	globalConfig   *Config
 	defaultKeyFile = "myconfigkey.json"
 	// 编译时注入的密钥文件密码，通过 -ldflags 注入
-	//go build -ldflags '-X github.com/gaozhiheng/myconfig.keyFilePassword=Gao@2025' -o example example.go
+	//go build -ldflags '-X github.com/gaozhiheng/myconfig.keyFilePassword=Gao@2025' example.go
 	keyFilePassword = ""
 )
 
@@ -357,7 +357,7 @@ func readKeyFromFile(keyFilePath, keyFilePassword string) (string, error) {
 		return "", fmt.Errorf("failed to decrypt key file: %v", err)
 	}
 
-	return keyData, nil
+	return strings.TrimSpace(keyData), nil
 }
 
 // GetConfigData 获取原始配置数据（用于兼容旧代码）
