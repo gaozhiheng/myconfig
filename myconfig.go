@@ -162,7 +162,7 @@ func (c *Config) readKeyFromFile() (string, error) {
 		return "", fmt.Errorf("failed to decrypt key file: %v", err)
 	}
 
-	return keyData, nil
+	return strings.TrimSpace(keyData), nil
 }
 
 // readPasswordFromStdin 从标准输入读取密码（不显示）
@@ -342,22 +342,6 @@ func (c *Config) saveConfig() error {
 	}
 
 	return nil
-}
-
-// readKeyFromFile 从密钥文件读取密码
-func readKeyFromFile(keyFilePath, keyFilePassword string) (string, error) {
-	file, err := os.Open(keyFilePath)
-	if err != nil {
-		return "", fmt.Errorf("failed to open key file: %v", err)
-	}
-	defer file.Close()
-
-	keyData, err := vimcrypto.Decrypt(file, keyFilePassword, "utf-8")
-	if err != nil {
-		return "", fmt.Errorf("failed to decrypt key file: %v", err)
-	}
-
-	return strings.TrimSpace(keyData), nil
 }
 
 // GetConfigData 获取原始配置数据（用于兼容旧代码）
