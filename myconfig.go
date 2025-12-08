@@ -49,7 +49,21 @@ func Init(configPath, keyFilePath string) error {
 	_, err := os.Stat(cfg.keyFilePath)
 	if os.IsNotExist(err) {
 		// 第一次初始化，要求用户输入解密密码
-		fmt.Printf("首次初始化，请为配置文件 %s 设置加密密码: ", configPath)
+		const info = `
+--------------------------------------------------------
+企业级配置信息双重加密组件说明：
+1.配置文件（一般为config.json）要求以blowfish2方式加密（文件头标识为“VimCrypt~03!”，使用vim工具:set cm=blowfish2，然后使用:X命令设置密码，即可加密保存文件）
+  配置文件要求以json格式设置各配置项的key和value,如：
+｛
+	"APP-ID": "mwp2u2tgwmvjwle@#ESkwiw",
+    "PORT": 30001
+｝
+2.本组件把配置文件的加密密码以不可告人的方式保存在密钥文件（一般为myconfigkey.json）
+  如密钥文件缺失（当首次初始化或用户因变更了配置文件的密码而主动删除了密钥文件以便重新生成该文件时），本组件自动提示用户输入配置文件的密码。
+--------------------------------------------------------
+`
+		fmt.Printf(info)
+		fmt.Printf("密钥文件缺失，请提供配置文件 %s 所使用的加密密码: ", configPath)
 		decryptPwd, err := readPasswordFromStdin()
 		if err != nil {
 			return fmt.Errorf("failed to read password: %v", err)
@@ -60,7 +74,7 @@ func Init(configPath, keyFilePath string) error {
 		if err := cfg.createKeyFile(); err != nil {
 			return fmt.Errorf("failed to create key file: %v", err)
 		}
-		fmt.Println("密钥文件创建成功")
+		fmt.Printf("密钥文件 %s 创建成功\n", cfg.keyFilePath)
 	} else if err != nil {
 		return fmt.Errorf("failed to check key file: %v", err)
 	} else {
